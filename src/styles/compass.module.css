@@ -1,0 +1,74 @@
+/* components/Compass.module.css or styles/globals.css */
+
+.compassArrow {
+  display: flex; /* Keep existing flex properties */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 100%;
+  background-color: rgba(35, 35, 35, 0.5);
+  transition: all 200ms linear; /* Match your transition duration */
+
+  /* Key Fix: Establish a new stacking context and ensure children are above background */
+  z-index: 1; /* Give the parent a z-index (any value > 0 works) */
+  /* Add position: relative to the parent if it's not already there */
+}
+
+.compassArrow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 3.5px 20px 3.5px;
+  border-color: transparent transparent #fe191a transparent; /* Red pointer */
+  z-index: 2; /* Give the pseudo-element a higher z-index than its parent's background */
+}
+
+.compassArrow::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 20px 3.5px 0 3.5px;
+  border-color: #fefefe transparent transparent transparent; /* White tail */
+  z-index: 2; /* Give the pseudo-element a higher z-index than its parent's background */
+}
+
+/* Responsive overrides (keep these as they are) */
+@screen sm {
+  .compassArrow::before {
+    border-width: 0 2px 15px 2px;
+  }
+  .compassArrow::after {
+    border-width: 15px 2px 0 2px;
+  }
+}
+
+@screen md {
+  .compassArrow::before {
+    border-width: 0 2.5px 15px 2.5px;
+  }
+  .compassArrow::after {
+    border-width: 15px 2.5px 0 2.5px;
+  }
+}
+
+@screen lg {
+  .compassArrow::before {
+    border-width: 0 3px 20px 3px;
+  }
+  .compassArrow::after {
+    border-width: 20px 3px 0 3px;
+  }
+}

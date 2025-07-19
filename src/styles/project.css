@@ -1,0 +1,28 @@
+/* Ensure project image is always on top */
+#project {
+  position: relative;
+  z-index: 100 !important;
+}
+
+#project image {
+  z-index: 100 !important;
+}
+
+#project foreignObject {
+  z-index: 100 !important;
+}
+
+.project-main-site {
+  z-index: 100 !important;
+}
+
+/* Special handling for SVG stacking context */
+svg g.project-main-site {
+  isolation: isolate;
+}
+
+/* Force the project to be on top of any blackout or active route */
+.blackout-overlay ~ g.project-main-site,
+.landmark-route.active ~ g.project-main-site {
+  z-index: 200 !important;
+}

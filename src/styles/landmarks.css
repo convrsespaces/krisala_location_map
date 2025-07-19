@@ -1,0 +1,53 @@
+/* Z-index layering for landmarks and blackout */
+.blackout-overlay {
+  z-index: 50 !important;
+}
+
+/* Default state: all landmark icons are BELOW blackout */
+.landmark-icon,
+.landmark-route,
+svg g.landmark-icon,
+svg g.landmark-route {
+  z-index: 10 !important;
+}
+
+/* Project site should always be visible above blackout */
+.project-main-site {
+  z-index: 100 !important;
+}
+
+/* Active landmarks should be ABOVE blackout */
+.landmark-icon.active,
+svg g.landmark-icon.active {
+  z-index: 60 !important;
+}
+
+.landmark-route.active,
+svg g.landmark-route.active {
+  z-index: 60 !important;
+}
+
+/* Project site should always be visible above blackout */
+.project-main-site,
+#project,
+#project image,
+#project foreignObject {
+  z-index: 100 !important;
+}
+
+/* Route details should be above everything */
+.landmark-details {
+  z-index: 70 !important;
+}
+
+/* Ensure all other map elements stay below blackout */
+.map-filter-temples,
+.map-filter-metros,
+.map-filter-schools,
+.map-filter-hotels,
+.map-filter-hospitals,
+.map-filter-recreations,
+.map-filter-entertainments,
+.map-filter-malls {
+  z-index: 10 !important;
+}
