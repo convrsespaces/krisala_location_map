@@ -9,6 +9,7 @@ import {
   mark_temples_10km,
   mark_metros_10km,
   mark_recreations_10km,
+  mark_entertainment_10km,
 } from "../data/locations/markerData10km";
 import {
   mark_hospitals_5km,
@@ -96,7 +97,7 @@ const getMapData = (mapId: string) => {
       temples: mark_temples_10km,
       metros: mark_metros_10km,
       recreations: mark_recreations_10km,
-      entertainment: [],
+      entertainment: mark_entertainment_10km,
       landmarks: landmarks_10km,
     },
     hyd: {

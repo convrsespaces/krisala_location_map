@@ -93,7 +93,7 @@ export const MapSwitcherVariants: React.FC< MapSwitcherVariantsProps> = ({select
     <div onClick={()=>setSelectedMapIds(!selectedMapIds)} className="overlay-can-hide rounded-lg overflow-hidden shadow-lg cursor-pointer hover:scale-105 transition-transform duration-200 ease-in-out">
       { (selectedMapId == "10km") ?
         <img className="h-20 w-40" src={`/maps/${selectedMapIds ? 'sattellite.webp':'35km.png'}`} alt="sattellite view" />:
-        <img className="h-20 w-40" src={`/maps/${selectedMapIds ? 'sattelite10.png':'10km.png'}`} alt="sattellite view" />
+        <img className="h-20 w-40" src={`/maps/${selectedMapIds ? 'sattelite10.webp':'10km.png'}`} alt="sattellite view" />
       }
     </div>
   )

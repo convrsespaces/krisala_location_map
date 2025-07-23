@@ -100,6 +100,7 @@ export const loadMarkerData = async (mapId: string) => {
           temples = markerData.temples || [];
           metro = markerData.metro || [];
           recreations = markerData.recreations || [];
+          entertainment = markerData.entertainment || [];
 
           try {
             const landmarkData = await import(
@@ -179,6 +180,7 @@ export const loadMarkerData = async (mapId: string) => {
           temples = markerData.temples || [];
           metro = markerData.metro || [];
           recreations = markerData.recreations || [];
+          entertainment = markerData.entertainment || [];
           const landmarkData = await import(
             "@/lib/data/routes/LandmarkRoute10km"
           );

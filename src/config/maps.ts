@@ -83,7 +83,7 @@ export const mapsConfig: MapConfig[] = [
     name: "10KM Map",
     imagePath: "/maps/10km.png",
     lowQualityImagePath: "/maps/5km-low.webp",
-    sattelliteImagePath: "/maps/sattelite10.png",
+    sattelliteImagePath: "/maps/sattelite10.webp",
     landmarks: [
       {
         id: "5km-landmark-1",

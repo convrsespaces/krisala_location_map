@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useMemo } from "react";
+import React, { memo, useMemo, useState, useEffect } from "react";
 import { useAppSelector } from "@/lib/store/hooks";
 import type { RootState } from "@/lib/store";
 import type { Marker, FilterConfig } from "@/lib/store/slices/filterSlice";
@@ -17,6 +17,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { EntertainmentIcon } from "./EntertainmentIcon";
+import { Modal } from "@/components/ui/modal";
+import Image from "next/image";
+import { createPortal } from "react-dom";
 
 interface SvgProps {
   className?: string;
@@ -263,7 +266,13 @@ export const MarkMalls = createMarkerComponent("mall", MallsIcon, "#FF4D4D");
 export const ProjectMainSite = memo(function ProjectMainSite({
   className = "",
 }: SvgProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const selectedMapId = useAppSelector((state: RootState) => state.map.selectedMapId);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Dynamic coordinates for each map
   const getCoordinates = (mapId: string) => {
@@ -271,32 +280,78 @@ export const ProjectMainSite = memo(function ProjectMainSite({
       case "10km":
         return { x: 1136, y: 460, cx: 1137.16, cy: 461.11 };
       case "5km":
-        return { x: 856, y: 250, cx: 1100, cy: 380 };
+        return { x: 856, y: 250, cx: 856, cy: 250 };
+      case "hyd":
+        return { x: 1102, y: 431, cx: 1102, cy: 431 };
       default:
-        return { x: 1102, y: 431, cx: 1137.16, cy: 461.11 };
+        return { x: 1102, y: 431, cx: 1102, cy: 431 };
     }
   };
   const coords = getCoordinates(selectedMapId);
+
+  // Calculate dynamic image positioning based on coordinates
+  const imageOffsetX = -25; // Half of imageWidth (50/2)
+  const imageOffsetY = -25; // Half of imageHeight (50/2)
+
+  // Function to transform SVG path coordinates to new position
+  const transformPath = (pathData: string, originalCenterX: number, originalCenterY: number, newCenterX: number, newCenterY: number) => {
+    const offsetX = newCenterX - originalCenterX;
+    const offsetY = newCenterY - originalCenterY;
+    
+    // Simple regex to find and replace coordinate pairs in SVG path
+    return pathData.replace(/([MLHVCSQTAZmlhvcsqtaz])\s*([^MLHVCSQTAZmlhvcsqtaz]*)/g, (match, command, coords) => {
+      if (command.toUpperCase() === 'Z') return match; // Z command has no coordinates
+      
+      const coordPairs = coords.trim().split(/\s+/);
+      const transformedCoords = coordPairs.map((coord: string, index: number) => {
+        const num = parseFloat(coord);
+        if (isNaN(num)) return coord;
+        
+        // Apply offset based on whether it's X or Y coordinate
+        if (index % 2 === 0) {
+          return (num + offsetX).toFixed(2);
+        } else {
+          return (num + offsetY).toFixed(2);
+        }
+      });
+      
+      return command + ' ' + transformedCoords.join(' ');
+    });
+  };
+
+  // Original center coordinates (from the hardcoded paths)
+  const originalCenterX = 1137.16;
+  const originalCenterY = 461.11;
+
+  // Original path data
+  const originalTextPath = "M1101.79 461.11C1101.79 454.696 1103.36 448.784 1106.51 443.376C1109.65 437.968 1113.96 433.692 1119.43 430.548C1124.9 427.404 1130.81 425.8 1137.16 425.737C1143.51 425.674 1149.43 427.278 1154.9 430.548C1160.37 433.818 1164.68 438.094 1167.82 443.376C1170.96 448.659 1172.54 454.57 1172.54 461.11C1172.54 463.814 1171.88 466.958 1170.55 470.542C1169.23 474.127 1167.57 477.743 1165.56 481.39C1163.54 485.037 1161.25 488.747 1158.67 492.52C1156.09 496.293 1153.58 499.815 1151.12 503.085C1148.67 506.355 1146.38 509.247 1144.24 511.763C1142.1 514.278 1140.4 516.322 1139.14 517.894L1137.16 520.064C1136.66 519.56 1136 518.806 1135.18 517.8C1134.37 516.794 1132.7 514.813 1130.18 511.857C1127.67 508.902 1125.34 505.946 1123.2 502.991C1121.07 500.035 1118.58 496.576 1115.75 492.615C1112.92 488.653 1110.59 484.88 1108.77 481.295C1106.95 477.711 1105.28 474.158 1103.77 470.637C1102.26 467.115 1101.6 463.939 1101.79 461.11ZM1113.58 461.11C1113.58 467.65 1115.88 473.215 1120.47 477.805C1125.06 482.396 1130.62 484.691 1137.16 484.691C1143.7 484.691 1149.27 482.396 1153.86 477.805C1158.45 473.215 1160.75 467.65 1160.75 461.11C1160.75 454.57 1158.45 449.036 1153.86 444.508C1149.27 439.981 1143.7 437.654 1137.16 437.528C1130.62 437.402 1125.06 439.729 1120.47 444.508C1115.88 449.287 1113.58 454.821 1113.58 461.11Z";
+  const originalIconPath = "M1101.79 461.11C1101.79 454.696 1103.36 448.784 1106.51 443.376C1109.65 437.968 1113.96 433.692 1119.43 430.548C1124.9 427.404 1130.81 425.8 1137.16 425.737C1143.51 425.674 1149.43 427.278 1154.9 430.548C1160.37 433.818 1164.68 438.094 1167.82 443.376C1170.96 448.659 1172.54 454.57 1172.54 461.11C1172.54 463.814 1171.88 466.958 1170.55 470.542C1169.23 474.127 1167.57 477.743 1165.56 481.39C1163.54 485.037 1161.25 488.747 1158.67 492.52C1156.09 496.293 1153.58 499.815 1151.12 503.085C1148.67 506.355 1146.38 509.247 1144.24 511.763C1142.1 514.278 1140.4 516.322 1139.14 517.894L1137.16 520.064C1136.66 519.56 1136 518.806 1135.18 517.8C1134.37 516.794 1132.7 514.813 1130.18 511.857C1127.67 508.902 1125.34 505.946 1123.2 502.991C1121.07 500.035 1118.58 496.576 1115.75 492.615C1112.92 488.653 1110.59 484.88 1108.77 481.295C1106.95 477.711 1105.28 474.158 1103.77 470.637C1102.26 467.115 1101.6 463.939 1101.79 461.11ZM1113.58 461.11C1113.58 467.65 1115.88 473.215 1120.47 477.805C1125.06 482.396 1130.62 484.691 1137.16 484.691C1143.7 484.691 1149.27 482.396 1153.86 477.805C1158.45 473.215 1160.75 467.65 1160.75 461.11C1160.75 454.57 1158.45 449.036 1153.86 444.508C1149.27 439.981 1143.7 437.654 1137.16 437.528C1130.62 437.402 1125.06 439.729 1120.47 444.508C1115.88 449.287 1113.58 454.821 1113.58 461.11Z";
+  const originalPathData = "M1101.79 461.11C1101.79 454.696 1103.36 448.784 1106.51 443.376C1109.65 437.968 1113.96 433.692 1119.43 430.548C1124.9 427.404 1130.81 425.8 1137.16 425.737C1143.51 425.674 1149.43 427.278 1154.9 430.548C1160.37 433.818 1164.68 438.094 1167.82 443.376C1170.96 448.659 1172.54 454.57 1172.54 461.11C1172.54 463.814 1171.88 466.958 1170.55 470.542C1169.23 474.127 1167.57 477.743 1165.56 481.39C1163.54 485.037 1161.25 488.747 1158.67 492.52C1156.09 496.293 1153.58 499.815 1151.12 503.085C1148.67 506.355 1146.38 509.247 1144.24 511.763C1142.1 514.278 1140.4 516.322 1139.14 517.894L1137.16 520.064C1136.66 519.56 1136 518.806 1135.18 517.8C1134.37 516.794 1132.7 514.813 1130.18 511.857C1127.67 508.902 1125.34 505.946 1123.2 502.991C1121.07 500.035 1118.58 496.576 1115.75 492.615C1112.92 488.653 1110.59 484.88 1108.77 481.295C1106.95 477.711 1105.28 474.158 1103.77 470.637C1102.26 467.115 1101.6 463.939 1101.79 461.11ZM1113.58 461.11C1113.58 467.65 1115.88 473.215 1120.47 477.805C1125.06 482.396 1130.62 484.691 1137.16 484.691C1143.7 484.691 1149.27 482.396 1153.86 477.805C1158.45 473.215 1160.75 467.65 1160.75 461.11C1160.75 454.57 1158.45 449.036 1153.86 444.508C1149.27 439.981 1143.7 437.654 1137.16 437.528C1130.62 437.402 1125.06 439.729 1120.47 444.508C1115.88 449.287 1113.58 454.821 1113.58 461.11Z";
+
+  // Transform paths to new position
+  const transformedTextPath = transformPath(originalTextPath, originalCenterX, originalCenterY, coords.cx, coords.cy);
+  const transformedIconPath = transformPath(originalIconPath, originalCenterX, originalCenterY, coords.cx, coords.cy);
+  const transformedPathData = transformPath(originalPathData, originalCenterX, originalCenterY, coords.cx, coords.cy);
 
   const iconData = {
     id: "__landmark Project",
     label: "Project",
     timeDistance: "30 min | 15 km",
-    textPath: "M1101.79 461.11C1101.79 454.696 1103.36 448.784 1106.51 443.376C1109.65 437.968 1113.96 433.692 1119.43 430.548C1124.9 427.404 1130.81 425.8 1137.16 425.737C1143.51 425.674 1149.43 427.278 1154.9 430.548C1160.37 433.818 1164.68 438.094 1167.82 443.376C1170.96 448.659 1172.54 454.57 1172.54 461.11C1172.54 463.814 1171.88 466.958 1170.55 470.542C1169.23 474.127 1167.57 477.743 1165.56 481.39C1163.54 485.037 1161.25 488.747 1158.67 492.52C1156.09 496.293 1153.58 499.815 1151.12 503.085C1148.67 506.355 1146.38 509.247 1144.24 511.763C1142.1 514.278 1140.4 516.322 1139.14 517.894L1137.16 520.064C1136.66 519.56 1136 518.806 1135.18 517.8C1134.37 516.794 1132.7 514.813 1130.18 511.857C1127.67 508.902 1125.34 505.946 1123.2 502.991C1121.07 500.035 1118.58 496.576 1115.75 492.615C1112.92 488.653 1110.59 484.88 1108.77 481.295C1106.95 477.711 1105.28 474.158 1103.77 470.637C1102.26 467.115 1101.6 463.939 1101.79 461.11ZM1113.58 461.11C1113.58 467.65 1115.88 473.215 1120.47 477.805C1125.06 482.396 1130.62 484.691 1137.16 484.691C1143.7 484.691 1149.27 482.396 1153.86 477.805C1158.45 473.215 1160.75 467.65 1160.75 461.11C1160.75 454.57 1158.45 449.036 1153.86 444.508C1149.27 439.981 1143.7 437.654 1137.16 437.528C1130.62 437.402 1125.06 439.729 1120.47 444.508C1115.88 449.287 1113.58 454.821 1113.58 461.11Z",
+    textPath: transformedTextPath,
     textPathFill: "#479800",
-    iconPath: "M1101.79 461.11C1101.79 454.696 1103.36 448.784 1106.51 443.376C1109.65 437.968 1113.96 433.692 1119.43 430.548C1124.9 427.404 1130.81 425.8 1137.16 425.737C1143.51 425.674 1149.43 427.278 1154.9 430.548C1160.37 433.818 1164.68 438.094 1167.82 443.376C1170.96 448.659 1172.54 454.57 1172.54 461.11C1172.54 463.814 1171.88 466.958 1170.55 470.542C1169.23 474.127 1167.57 477.743 1165.56 481.39C1163.54 485.037 1161.25 488.747 1158.67 492.52C1156.09 496.293 1153.58 499.815 1151.12 503.085C1148.67 506.355 1146.38 509.247 1144.24 511.763C1142.1 514.278 1140.4 516.322 1139.14 517.894L1137.16 520.064C1136.66 519.56 1136 518.806 1135.18 517.8C1134.37 516.794 1132.7 514.813 1130.18 511.857C1127.67 508.902 1125.34 505.946 1123.2 502.991C1121.07 500.035 1118.58 496.576 1115.75 492.615C1112.92 488.653 1110.59 484.88 1108.77 481.295C1106.95 477.711 1105.28 474.158 1103.77 470.637C1102.26 467.115 1101.6 463.939 1101.79 461.11ZM1113.58 461.11C1113.58 467.65 1115.88 473.215 1120.47 477.805C1125.06 482.396 1130.62 484.691 1137.16 484.691C1143.7 484.691 1149.27 482.396 1153.86 477.805C1158.45 473.215 1160.75 467.65 1160.75 461.11C1160.75 454.57 1158.45 449.036 1153.86 444.508C1149.27 439.981 1143.7 437.654 1137.16 437.528C1130.62 437.402 1125.06 439.729 1120.47 444.508C1115.88 449.287 1113.58 454.821 1113.58 461.11Z",
+    iconPath: transformedIconPath,
     iconPathFill: "#479800",
     imageSrc: "/project.webp",
     imageWidth: 50,
     imageHeight: 50,
-    imageX: 1112.16,
-    imageY: 436.11,
-    clipCenterX: 1137.16,
-    clipCenterY: 461.11,
+    imageX: coords.cx + imageOffsetX,
+    imageY: coords.cy + imageOffsetY,
+    clipCenterX: coords.cx,
+    clipCenterY: coords.cy,
     clipRadius: 26,
     paths: [
       {
-        d: "M1101.79 461.11C1101.79 454.696 1103.36 448.784 1106.51 443.376C1109.65 437.968 1113.96 433.692 1119.43 430.548C1124.9 427.404 1130.81 425.8 1137.16 425.737C1143.51 425.674 1149.43 427.278 1154.9 430.548C1160.37 433.818 1164.68 438.094 1167.82 443.376C1170.96 448.659 1172.54 454.57 1172.54 461.11C1172.54 463.814 1171.88 466.958 1170.55 470.542C1169.23 474.127 1167.57 477.743 1165.56 481.39C1163.54 485.037 1161.25 488.747 1158.67 492.52C1156.09 496.293 1153.58 499.815 1151.12 503.085C1148.67 506.355 1146.38 509.247 1144.24 511.763C1142.1 514.278 1140.4 516.322 1139.14 517.894L1137.16 520.064C1136.66 519.56 1136 518.806 1135.18 517.8C1134.37 516.794 1132.7 514.813 1130.18 511.857C1127.67 508.902 1125.34 505.946 1123.2 502.991C1121.07 500.035 1118.58 496.576 1115.75 492.615C1112.92 488.653 1110.59 484.88 1108.77 481.295C1106.95 477.711 1105.28 474.158 1103.77 470.637C1102.26 467.115 1101.6 463.939 1101.79 461.11ZM1113.58 461.11C1113.58 467.65 1115.88 473.215 1120.47 477.805C1125.06 482.396 1130.62 484.691 1137.16 484.691C1143.7 484.691 1149.27 482.396 1153.86 477.805C1158.45 473.215 1160.75 467.65 1160.75 461.11C1160.75 454.57 1158.45 449.036 1153.86 444.508C1149.27 439.981 1143.7 437.654 1137.16 437.528C1130.62 437.402 1125.06 439.729 1120.47 444.508C1115.88 449.287 1113.58 454.821 1113.58 461.11Z",
+        d: transformedPathData,
         fill: "#479800",
         id: "Vector"
       }
@@ -306,9 +361,25 @@ export const ProjectMainSite = memo(function ProjectMainSite({
   // Combine passed className with animate-pulse-scale
   const combinedClassName = `animate-pulse-scale ${className}`.trim();
 
-  // Use transform to move the entire icon
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsModalOpen(true);
+  };
+
+  // Render the icon at the calculated position
   return (
-    <g id={iconData.id} className={combinedClassName} transform={`translate(${coords.x - 1137.16}, ${coords.y - 461.11})`}>
+    <>
+      <g 
+        id={iconData.id} 
+        className={`${combinedClassName} cursor-pointer`} 
+        onClick={handleClick}
+        onMouseDown={(e) => e.preventDefault()}
+        style={{ 
+          pointerEvents: 'all',
+          cursor: 'pointer'
+        }}
+      >
       {/* Image clip path */}
       <defs>
         <clipPath id="project-image-clip">
@@ -319,19 +390,21 @@ export const ProjectMainSite = memo(function ProjectMainSite({
           />
         </clipPath>
       </defs>
-      <g>
+      <g onClick={handleClick}>
         <path
           d={iconData.iconPath}
           fill={iconData.iconPathFill}
           stroke={iconData.iconPathFill}
           strokeWidth="1.5"
           strokeMiterlimit="10"
+          onClick={handleClick}
         />
         <path
           fillRule="evenodd"
           clipRule="evenodd"
           d={iconData.textPath}
           fill={iconData.textPathFill}
+          onClick={handleClick}
         />
         {iconData.paths &&
           iconData.paths.map((path, index) => (
@@ -339,6 +412,7 @@ export const ProjectMainSite = memo(function ProjectMainSite({
               key={`path-${index}`}
               d={path.d}
               fill={path.fill}
+              onClick={handleClick}
             />
           ))}
         {/* Render project image on top */}
@@ -350,8 +424,32 @@ export const ProjectMainSite = memo(function ProjectMainSite({
           height={iconData.imageHeight}
           clipPath="url(#project-image-clip)"
           preserveAspectRatio="xMidYMid slice"
+          onClick={handleClick}
         />
       </g>
-    </g>
+      </g>
+
+      {/* Masterplan Modal */}
+      {mounted && isModalOpen && createPortal(
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title="Project Masterplan"
+          className="max-w-6xl"
+        >
+          <div className="relative w-full h-[80vh] min-h-[500px]">
+            <Image
+              src="/maps/masterplan.webp"
+              alt="Project Masterplan"
+              fill
+              className="object-contain"
+              priority
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+            />
+          </div>
+        </Modal>,
+        document.body
+      )}
+    </>
   );
 });
